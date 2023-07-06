@@ -1,70 +1,144 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { BadRequestError } = require('../utils/BadRequestError');
+const { ConflictError } = require('../utils/ConflictError');
+const { NotFoundError } = require('../utils/NotFoundError');
+const { UnauthorizedError } = require('../utils/UnauthorizedError')
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       res.status(200).send(users);
     })
-    .catch(() => res.status(500).send({ message: 'Interal server error' }));
+    .catch(next);
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(201).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Validation error' });
-      } else {
-        res.status(500).send({ message: 'Interal server error' });
-      }
+const createUser = (req, res, next) => {
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+
+  bcrypt.hash(password, 10)
+    .then((hashedPassword) => {
+      User.create({
+        name,
+        about,
+        avatar,
+        email,
+        password: hashedPassword,
+      })
+        .then((user) => res.status(201).send(user))
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError());
+          } else if (err.code === 11000) {
+            next(new ConflictError());
+          } else {
+            next(err);
+          }
+        });
     });
 };
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
-    .orFail(() => new Error('Not found'))
+    .orFail(() => {
+      throw new NotFoundError();
+    })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.message === 'Not found') {
-        res.status(404).send({ message: 'User not found' });
+        next(new NotFoundError());
       } else if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Bad request' });
+        next(new BadRequestError());
       } else {
-        res.status(500).send({ message: 'Interal server error' });
+        next(err);
       }
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
-    .orFail(() => new Error('Not found'))
+    .orFail(() => {
+      throw new NotFoundError();
+    })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.message === 'Not found') {
-        res.status(404).send({ message: 'User not found' });
+        next(new NotFoundError());
       } else if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Bad request' });
+        next(new BadRequestError());
       } else {
-        res.status(500).send({ message: 'Interal server error' });
+        next(err);
       }
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-    .orFail(() => new Error('Not found'))
+    .orFail(() => {
+      throw new BadRequestError();
+    })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.message === 'Not found') {
-        res.status(404).send({ message: 'User not found' });
+        next(new NotFoundError());
       } else if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Bad request' });
+        next(new BadRequestError());
       } else {
-        res.status(500).send({ message: 'Interal server error' });
+        next(err);
+      }
+    });
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  User.findOne({ email })
+    .select('+password')
+    .orFail(() => {
+      throw new UnauthorizedError();
+    })
+    .then((user) => {
+      bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new UnauthorizedError();
+          }
+          const token = jwt.sign({ _id: user._id }, 'TODO: SECRET');
+          res.cookie('jwt', token, {
+            expiresIn: '7d',
+            httpOnly: true,
+            sameSite: true,
+          });
+          res.status(200).send({ data: user.receiveUser() });
+        })
+        .catch(next);
+    })
+    .catch(next);
+};
+
+const getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(() => {
+      throw new NotFoundError();
+    })
+    .then((user) => res.status(200).send({ user }))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError());
+      } else if (err.message === 'NotFound') {
+        next(new NotFoundError());
+      } else {
+        next(err);
       }
     });
 };
@@ -75,4 +149,6 @@ module.exports = {
   getUser,
   updateUser,
   updateAvatar,
+  login,
+  getCurrentUser,
 };
