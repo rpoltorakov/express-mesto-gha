@@ -11,10 +11,10 @@ const {
   validatorCreateCard,
 } = require('../middlewares/validators');
 
-router.get('/cards', getCards);
-router.post('/cards', validatorCreateCard, createCard);
-router.delete('/cards/:cardId', validatorCardId, deleteCard);
-router.put('/cards/:cardId/likes', validatorCardId, likeCard);
-router.delete('/cards/:cardId/likes', validatorCardId, dislikeCard);
+router.get('/', getCards);
+router.post('/', validatorCreateCard, createCard);
+router.delete('/:cardId', validatorCardId, deleteCard);
+router.put('/:cardId/likes', validatorCardId, likeCard);
+router.delete('/:cardId/likes', validatorCardId, dislikeCard);
 
 module.exports = router;
