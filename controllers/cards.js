@@ -66,7 +66,7 @@ const dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => new Error('Not found'))
+    .orFail(() => new NotFoundError())
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.message === 'Not found') {
