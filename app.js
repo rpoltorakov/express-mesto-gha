@@ -5,7 +5,8 @@ const { errors } = require('celebrate');
 const cardRouter = require('./routes/card');
 const userRouter = require('./routes/users');
 const { NotFoundError } = require('./utils/NotFoundError');
-const { errorMiddleware } = require('./utils/errorMiddleware')
+const { errorMiddleware } = require('./utils/errorMiddleware');
+
 const { PORT = 3000 } = process.env;
 
 const app = express();

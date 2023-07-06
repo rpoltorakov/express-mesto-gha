@@ -1,7 +1,7 @@
 const Card = require('../models/card');
 const { BadRequestError } = require('../utils/BadRequestError');
 const { NotFoundError } = require('../utils/NotFoundError');
-const { AccessDeniedError } = require('../utils/AccessDeniedError')
+const { AccessDeniedError } = require('../utils/AccessDeniedError');
 
 const getCards = (req, res, next) => {
   Card.find({})
