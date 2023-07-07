@@ -32,7 +32,7 @@ const createUser = (req, res, next) => {
           email,
           password: hashedPassword,
         })
-        .then((user) => res.status(201).send(user))
+        .then((user) => res.status(201).send(user.receiveUser()))
         .catch((err) => {
           if (err.name === 'ValidationError') {
             next(new BadRequestError());
