@@ -1,8 +1,7 @@
 class ConflictError extends Error {
   constructor() {
-    super();
+    super('Указанный email уже существует');
     this.statusCode = 409;
-    this.message = 'Указанный email уже существует';
   }
 }
 

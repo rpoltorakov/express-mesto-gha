@@ -12,6 +12,7 @@ const auth = (req, res, next) => {
     payload = jwt.verify(token, 'TODO: SECRET');
   } catch (err) {
     next(new UnauthorizedError());
+    return;
   }
   req.user = payload;
   next();

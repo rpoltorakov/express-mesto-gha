@@ -50,9 +50,7 @@ const likeCard = (req, res, next) => {
     })
     .then((card) => res.status(200).send(card))
     .catch((err) => {
-      if (err.message === 'Not found') {
-        next(new NotFoundError());
-      } else if (err.name === 'CastError') {
+      if (err.name === 'CastError') {
         next(new BadRequestError());
       } else {
         next(err);

@@ -1,8 +1,7 @@
 class AccessDeniedError extends Error {
   constructor() {
-    super();
+    super('Access denied');
     this.statusCode = 403;
-    this.message = 'Access denied';
   }
 }
 

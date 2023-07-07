@@ -62,9 +62,7 @@ const getUser = (req, res, next) => {
     })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.message === 'Not found') {
-        next(new NotFoundError());
-      } else if (err.name === 'CastError') {
+      if (err.name === 'CastError') {
         next(new BadRequestError());
       } else {
         next(err);
@@ -80,9 +78,7 @@ const updateUser = (req, res, next) => {
     })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.message === 'Not found') {
-        next(new NotFoundError());
-      } else if (err.name === 'CastError' || err.name === 'ValidationError') {
+      if (err.name === 'ValidationError') {
         next(new BadRequestError());
       } else {
         next(err);
@@ -94,13 +90,11 @@ const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .orFail(() => {
-      throw new BadRequestError();
+      throw new NotFoundError();
     })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.message === 'Not found') {
-        next(new NotFoundError());
-      } else if (err.name === 'CastError' || err.name === 'ValidationError') {
+      if (err.name === 'ValidationError') {
         next(new BadRequestError());
       } else {
         next(err);
@@ -141,15 +135,7 @@ const getCurrentUser = (req, res, next) => {
       throw new NotFoundError();
     })
     .then((user) => res.status(200).send({ user }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError());
-      } else if (err.message === 'NotFound') {
-        next(new NotFoundError());
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports = {
